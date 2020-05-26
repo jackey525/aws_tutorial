@@ -1,0 +1,61 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'User with S3 Bucket'
+
+Parameters:
+  S3User:
+    Type: String
+    Description: 'S3 IAM user name'
+    Default: ''
+
+  S3BucketName:
+    Type: String
+    Description: 'S3 bucket name'
+    Default: ''
+
+Resources:
+  S3IAMUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Sub '${S3User}'
+      Policies:
+      - PolicyName: !Sub '${AWS::StackName}-s3-policy'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: 'Allow'
+            Action:
+            - 's3:*'
+            Resource:
+            - !Sub 'arn:aws:s3:::${S3Bucket}'
+            - !Sub 'arn:aws:s3:::${S3Bucket}/*'
+
+  S3UserKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      Status: Active
+      UserName: !Ref S3IAMUser
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${S3BucketName}'
+#      LifecycleConfiguration:
+#        Rules:
+#        - ExpirationInDays: 365
+#          Status: Enabled
+#        - AbortIncompleteMultipartUpload:
+#            DaysAfterInitiation: 30
+#          Status: Enabled
+
+Outputs:
+  S3UserAccessKey:
+    Value: !Ref S3UserKey
+    Export:
+      Name: !Sub '${AWS::StackName}-Access-Key'
+
+  S3UserSecretAccessKey:
+    Value: !GetAtt S3UserKey.SecretAccessKey
+    Export:
+      Name: !Sub '${AWS::StackName}-Secret-Access-Key'
+
